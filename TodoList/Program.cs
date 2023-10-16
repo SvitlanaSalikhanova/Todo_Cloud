@@ -1,6 +1,8 @@
 
+using Amazon.SimpleEmail;
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using TodoList.Entities;
 using TodoList.Mapping;
 using TodoList.Repositories;
@@ -33,10 +35,15 @@ namespace TodoList
 
             }).CreateMapper());
 
+
             builder.Services.AddScoped<ITodoListRepository, TodoListRepository>();
             builder.Services.AddScoped<ITodoItemRepository, TodoItemRepository>();
             builder.Services.AddScoped<ITodoListService, TodoListService>();
             builder.Services.AddScoped<ITodoItemService, TodoItemService>();
+            builder.Services.AddScoped<IEmailService, EmailAWSService>();
+
+            builder.Services.AddDefaultAWSOptions(builder.Configuration.GetAWSOptions());
+            builder.Services.AddAWSService<IAmazonSimpleEmailService>();
 
             var app = builder.Build();
 
@@ -52,6 +59,13 @@ namespace TodoList
                 var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
                 db.Database.Migrate();
             }
+
+
+            //Logger
+            var loggerFactory = new LoggerFactory();
+            loggerFactory.AddAWSProvider(builder.Configuration.GetAWSLoggingConfigSection());
+            var logger = loggerFactory.CreateLogger("Program");
+            logger.LogWarning("Warnning from configure");
 
             app.UseHttpsRedirection();
 
