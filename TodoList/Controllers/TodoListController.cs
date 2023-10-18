@@ -11,10 +11,14 @@ namespace TodoList.Controllers
     public class TodoListController : ControllerBase
     {
         private readonly ITodoListService _todoListService;
-        
-        public TodoListController(ITodoListService todoListService)
+        private readonly INotificationService _notificationService;
+        private const string AWSTopicArn = "arn:aws:sns:eu-north-1:888584404075:TodoListTopic";
+
+
+        public TodoListController(ITodoListService todoListService, INotificationService notificationService)
         {
             _todoListService = todoListService;
+            _notificationService = notificationService;
         }
 
 
@@ -49,6 +53,9 @@ namespace TodoList.Controllers
         public async Task<ActionResult<List<TodoListDetailsModel>>> Add(TodoListAddModel model, CancellationToken cancellation = default)
         {
             var todoList = await _todoListService.AddAsync(model, cancellation);
+
+            var result = await _notificationService.SendNotification($"New Todo list created - Id = {todoList.Id}", AWSTopicArn);
+
             return CreatedAtAction(nameof(GetById), new { id = todoList.Id }, todoList);
         }
 
